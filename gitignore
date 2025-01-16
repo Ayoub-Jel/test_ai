@@ -1,0 +1,73 @@
+# === Python général ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# === Environnements virtuels ===
+.venv/
+venv/
+env/
+ENV/
+*.env
+*.env.*
+
+# === IDEs ===
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# === Logs & fichiers temporaires ===
+*.log
+*.pot
+*.pyc
+*.tmp
+*.bak
+*.swp
+.DS_Store
+
+# === FastAPI (Uvicorn, etc.) ===
+*.db
+instance/
+*.sqlite3
+
+# === Streamlit ===
+.streamlit/config.toml
+.streamlit/secrets.toml
+# (optionnel) : si tu veux ignorer les fichiers de cache de Streamlit
+.streamlit/cache/
+.streamlit/*.json
+
+# === Tests ===
+htmlcov/
+.coverage
+.tox/
+.pytest_cache/
+nosetests.xml
+coverage.xml
+
+# === Jupyter notebooks ===
+.ipynb_checkpoints/
+
+# === Docker (si utilisé) ===
+*.pid
+*.pid.lock
+
+# === MyPy / Pylint ===
+.mypy_cache/
+.pyre/
+.dmypy.json
+.pytype/
+
+# === Poetry (si utilisé) ===
+poetry.lock
+
+# === Node.js (si frontend inclus) ===
+node_modules/
