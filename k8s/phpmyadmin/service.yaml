@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: phpmyadmin-service
+  namespace: car-dealership
+  labels:
+    app: phpmyadmin
+    component: admin
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30808
+    protocol: TCP
+    name: http
+  selector:
+    app: phpmyadmin

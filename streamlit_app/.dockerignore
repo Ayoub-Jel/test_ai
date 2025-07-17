@@ -1,0 +1,110 @@
+# .dockerignore pour streamlit_app
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+README.rst
+docs/
+*.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+log/
+
+# Cache
+.cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Streamlit
+.streamlit/secrets.toml
+.streamlit/credentials.toml
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# Docker
+.dockerignore
+Dockerfile*
+docker-compose*.yml
+
+# Environment variables (sécurité)
+.env
+.env.local
+.env.production
+.env.staging
+
+# Node.js (si applicable)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Tests
+tests/
+test/
+*_test.py
+test_*.py
+
+# Assets volumineux (à configurer selon vos besoins)
+# *.mp4
+# *.avi
+# *.mov
+# *.large-files

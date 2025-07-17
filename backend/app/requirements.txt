@@ -1,0 +1,65 @@
+# ===================================
+# QUANTUM MOTORS - BACKEND REQUIREMENTS
+# ===================================
+
+# FastAPI et serveur ASGI
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Base de données et ORM
+sqlalchemy==2.0.23
+pymysql==1.1.0
+cryptography==41.0.7
+
+# Validation et sérialisation
+pydantic==2.5.0
+pydantic-settings==2.1.0
+email-validator==2.1.0
+
+# Authentification et sécurité
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.1.2
+
+# Gestion des formulaires et fichiers
+python-multipart==0.0.6
+
+# Utilitaires
+python-dotenv==1.0.0
+python-dateutil==2.8.2
+
+# HTTP client pour tests
+httpx==0.25.2
+
+# Développement et tests (optionnel)
+pytest==7.4.3
+pytest-asyncio==0.21.1
+
+# Monitoring et santé
+psutil==5.9.6
+
+# ===================================
+# VERSIONS FIXES POUR LA STABILITÉ
+# ===================================
+
+# Core dependencies avec versions exactes
+typing-extensions==4.8.0
+annotated-types==0.6.0
+anyio==3.7.1
+click==8.1.7
+h11==0.14.0
+idna==3.4
+sniffio==1.3.0
+starlette==0.27.0
+
+# Crypto et sécurité
+ecdsa==0.18.0
+pyasn1==0.5.0
+rsa==4.9
+
+# Base de données
+greenlet==3.0.1
+
+# Développement
+watchfiles==0.21.0
+websockets==12.0

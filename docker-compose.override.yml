@@ -1,0 +1,156 @@
+# docker-compose.override.yml
+# Configuration pour le développement local
+# Ce fichier est automatiquement fusionné avec docker-compose.yml
+
+# version: '3.8'
+
+services:
+  # Override pour le développement de l'API
+  api:
+    volumes:
+      # Montage des sources pour le hot reload
+      - ./backend/app:/app/app:rw
+      - ./backend/scripts:/app/scripts:ro
+      - ./backend/run.py:/app/run.py:ro
+    environment:
+      # Variables spécifiques au développement
+      DEBUG: "true"
+      LOG_LEVEL: "DEBUG"
+      RELOAD: "true"
+      # CORS étendu pour le développement
+      CORS_ORIGINS: '["http://localhost:3000","http://localhost:8080","http://localhost:5173","http://localhost:8501","http://frontend:8501","http://localhost:8000"]'
+    # Command override pour le hot reload
+    command: ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--log-level", "debug"]
+    # Ports supplémentaires pour le debugging
+    ports:
+      - "8000:8000"
+      - "5678:5678"  # Port pour le debugger Python (optionnel)
+
+  # Override pour le développement du frontend
+  frontend:
+    volumes:
+      # Montage des sources pour le hot reload Streamlit
+      - ./streamlit_app:/app:rw
+    environment:
+      # Variables spécifiques au développement
+      DEBUG: "true"
+      # API accessible depuis l'extérieur en dev
+      API_BASE_URL: http://localhost:8000
+      # Configuration Streamlit pour le développement
+      STREAMLIT_SERVER_FILE_WATCHER_TYPE: auto
+      STREAMLIT_SERVER_RUN_ON_SAVE: true
+      STREAMLIT_BROWSER_GATHER_USAGE_STATS: false
+      STREAMLIT_GLOBAL_DEVELOPMENT_MODE: true
+    # Command override pour le mode développement
+    command: ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.fileWatcherType=auto", "--server.runOnSave=true"]
+
+  # Override pour MySQL en développement
+  mysql:
+    # Configuration MySQL optimisée pour le développement
+    command: >
+      --default-authentication-plugin=mysql_native_password 
+      --innodb-buffer-pool-size=128M 
+      --innodb-log-file-size=32M
+      --slow-query-log=1
+      --slow-query-log-file=/var/log/mysql/slow.log
+      --long-query-time=1
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - mysql_logs:/var/log/mysql
+      # Scripts de développement supplémentaires
+      - ./backend/scripts:/docker-entrypoint-initdb.d/scripts:ro
+    environment:
+      # Variables pour le développement
+      MYSQL_INNODB_BUFFER_POOL_SIZE: 128M
+      MYSQL_INNODB_LOG_FILE_SIZE: 32M
+
+  # Service pour les tests automatisés
+  test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql+pymysql://car_user:car_password@mysql:3306/car_dealership_test
+      SECRET_KEY: test-secret-key-for-development
+      TESTING: "true"
+      DEBUG: "true"
+    volumes:
+      - ./backend/app:/app/app:ro
+      - ./backend/tests:/app/tests:ro
+      - test_reports:/app/reports
+    command: ["python", "-m", "pytest", "tests/", "-v", "--html=reports/report.html", "--self-contained-html"]
+    networks:
+      - car_dealership_network
+    profiles:
+      - testing
+
+  # Service pour hot reload du frontend (alternatif)
+  frontend-dev:
+    build:
+      context: ./streamlit_app
+      dockerfile: Dockerfile
+    container_name: car_dealership_frontend_dev
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_BASE_URL: http://api:8000
+      DEBUG: "true"
+      STREAMLIT_SERVER_FILE_WATCHER_TYPE: auto
+      STREAMLIT_SERVER_RUN_ON_SAVE: true
+    ports:
+      - "8502:8501"  # Port alternatif pour éviter les conflits
+    volumes:
+      - ./streamlit_app:/app:rw
+    command: ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.fileWatcherType=auto"]
+    networks:
+      - car_dealership_network
+    profiles:
+      - development
+
+  # Service pour le monitoring en développement
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: car_dealership_portainer
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - car_dealership_network
+    profiles:
+      - monitoring
+
+  # Service pour un reverse proxy de développement (optionnel)
+  nginx-dev:
+    image: nginx:alpine
+    container_name: car_dealership_nginx_dev
+    depends_on:
+      - api
+      - frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx-dev.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - car_dealership_network
+    profiles:
+      - proxy
+
+volumes:
+  mysql_logs:
+    name: car_dealership_mysql_logs
+    driver: local
+  test_reports:
+    name: car_dealership_test_reports
+    driver: local
+  portainer_data:
+    name: car_dealership_portainer_data
+    driver: local

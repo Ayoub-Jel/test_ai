@@ -1,0 +1,70 @@
+tree -I "__pycache__|*.pyc|quantumMotorsVenv|frontend"
+.
+├── README.md
+├── backend
+│   ├── Dockerfile
+│   ├── README-DOCKER.md
+│   ├── app
+│   │   ├── __init__.py
+│   │   ├── configs
+│   │   │   ├── database.py
+│   │   │   └── settings.py
+│   │   ├── main.py
+│   │   ├── models
+│   │   │   ├── database.py
+│   │   │   └── schema.py
+│   │   ├── requirements.txt
+│   │   ├── routers
+│   │   │   ├── auth_router.py
+│   │   │   ├── cars_router.py
+│   │   │   └── reservations_router.py
+│   │   ├── services
+│   │   │   ├── auth_service.py
+│   │   │   ├── cars_service.py
+│   │   │   └── reservation_service.py
+│   │   └── utils
+│   │       ├── auth.py
+│   │       └── helpers.py
+│   ├── docker-compose.override.yml
+│   ├── docker-compose.yml
+│   ├── requirements.txt
+│   ├── run.py
+│   └── scripts
+│       ├── 01-setup.sql
+│       ├── 02-sample-data.sql
+│       ├── dev.py
+│       ├── docker-start.sh
+│       ├── init_db.py
+│       ├── sample_data.sql
+│       ├── setup_db.sql
+│       └── validate-docker.py
+├── docker-compose.override.yml
+├── docker-compose.yml
+├── gitignore
+├── nginx-dev.conf
+├── start-docker.sh
+├── streamlit_app
+│   ├── Dockerfile
+│   ├── app.py
+│   ├── assets
+│   ├── components
+│   │   ├── __init__.py
+│   │   ├── header.py
+│   │   └── sidebar.py
+│   ├── config.toml
+│   ├── config_1.toml
+│   ├── pages
+│   │   ├── __init__.py
+│   │   ├── cars_page.py
+│   │   ├── dashboard_page.py
+│   │   ├── profile_page.py
+│   │   └── reservations_page.py
+│   ├── requirements.txt
+│   ├── run_streamlit.sh
+│   └── utils
+│       ├── __init__.py
+│       ├── api_client.py
+│       ├── auth_ui_utils.py
+│       └── session_state.py
+├── struct.txt
+└── validate-complete.py

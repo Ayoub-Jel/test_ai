@@ -1,0 +1,124 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: car-dealership-config
+  namespace: car-dealership
+data:
+  # Database Configuration
+  MYSQL_DATABASE: "car_dealership"
+  MYSQL_USER: "car_user"
+  
+  # API Configuration
+  APP_NAME: "Car Dealership API"
+  APP_VERSION: "1.0.0"
+  ALGORITHM: "HS256"
+  ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+  DEBUG: "false"
+  DEFAULT_PAGE_SIZE: "20"
+  MAX_PAGE_SIZE: "100"
+  
+  # CORS Configuration
+  CORS_ORIGINS: '["https://car-dealership.local","http://localhost:8501"]'
+  
+  # Redis Configuration
+  REDIS_URL: "redis://redis-service:6379/0"
+  
+  # Email Configuration
+  SMTP_HOST: "smtp.gmail.com"
+  SMTP_PORT: "587"
+  SMTP_USER: "your-email@gmail.com"
+  
+  # Upload Configuration
+  MAX_UPLOAD_SIZE: "10485760"
+  UPLOAD_DIR: "/app/uploads"
+  ALLOWED_EXTENSIONS: '["jpg","jpeg","png","pdf"]'
+  
+  # Logging
+  LOG_LEVEL: "INFO"
+  LOG_FILE: "/app/logs/app.log"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-initdb
+  namespace: car-dealership
+data:
+  01-setup.sql: |
+    USE car_dealership;
+    
+    CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        nom VARCHAR(100) NOT NULL,
+        prenom VARCHAR(100) NOT NULL,
+        telephone VARCHAR(20) NOT NULL,
+        role ENUM('client', 'vendeur') NOT NULL,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        
+        INDEX idx_email (email),
+        INDEX idx_role (role),
+        INDEX idx_is_active (is_active)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    
+    CREATE TABLE IF NOT EXISTS cars (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        marque VARCHAR(100) NOT NULL,
+        modele VARCHAR(100) NOT NULL,
+        couleur VARCHAR(50) NOT NULL,
+        motorisation VARCHAR(100) NOT NULL,
+        prix DECIMAL(10,2) NOT NULL,
+        disponibilite ENUM('disponible', 'loue', 'vendu') DEFAULT 'disponible',
+        description TEXT,
+        kilometrage INT,
+        annee INT,
+        image_url VARCHAR(500),
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        
+        INDEX idx_marque (marque),
+        INDEX idx_modele (modele),
+        INDEX idx_prix (prix),
+        INDEX idx_disponibilite (disponibilite),
+        INDEX idx_annee (annee),
+        INDEX idx_is_active (is_active)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    
+    CREATE TABLE IF NOT EXISTS reservations (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        car_id INT NOT NULL,
+        user_id INT NOT NULL,
+        type_transaction ENUM('vente', 'location') NOT NULL,
+        date_debut DATETIME NOT NULL,
+        date_fin DATETIME NULL,
+        prix_final DECIMAL(10,2) NOT NULL,
+        statut ENUM('en_attente', 'confirmee', 'annulee', 'terminee') DEFAULT 'en_attente',
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        
+        FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        
+        INDEX idx_car_id (car_id),
+        INDEX idx_user_id (user_id),
+        INDEX idx_statut (statut),
+        INDEX idx_type_transaction (type_transaction),
+        INDEX idx_date_debut (date_debut)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+  02-sample-data.sql: |
+    USE car_dealership;
+    
+    INSERT INTO users (email, password, nom, prenom, telephone, role, is_active, created_at) VALUES
+    ('admin@cardealership.com', '$2b$12$LQv3c1yqBwcVbKVUGlXbQ.KfJJVzKKXqEfwJ4MzJ4M0J4M0J4M0J4M', 'Admin', 'Super', '0123456789', 'vendeur', 1, NOW()),
+    ('vendeur@test.com', '$2b$12$LQv3c1yqBwcVbKVUGlXbQ.KfJJVzKKXqEfwJ4MzJ4M0J4M0J4M0J4M', 'Durand', 'Jean', '0123456789', 'vendeur', 1, NOW()),
+    ('client@test.com', '$2b$12$LQv3c1yqBwcVbKVUGlXbQ.KfJJVzKKXqEfwJ4MzJ4M0J4M0J4M0J4M', 'Martin', 'Marie', '0987654321', 'client', 1, NOW());
+    
+    INSERT INTO cars (marque, modele, couleur, motorisation, prix, disponibilite, description, kilometrage, annee, created_at) VALUES
+    ('Toyota', 'Corolla', 'blanc', 'Essence 1.2L', 22000.00, 'disponible', 'Berline compacte fiable et économique', 15000, 2021, NOW()),
+    ('BMW', 'Série 3', 'noir', 'Diesel 2.0L', 35000.00, 'disponible', 'Berline premium avec finitions haut de gamme', 8000, 2022, NOW()),
+    ('Renault', 'Clio', 'rouge', 'Essence 1.0L', 18000.00, 'disponible', 'Citadine pratique et moderne', 25000, 2020, NOW());

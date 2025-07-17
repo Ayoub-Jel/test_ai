@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: car-dealership
+  labels:
+    app: api
+    component: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+        component: backend
+    spec:
+      containers:
+      - name: api
+        image: test_ai-api:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: DATABASE_URL
+          value: "mysql+pymysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@mysql-service:3306/$(MYSQL_DATABASE)"
+        - name: MYSQL_USER
+          valueFrom:
+            configMapKeyRef:
+              name: car-dealership-config
+              key: MYSQL_USER
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: car-dealership-secrets
+              key: mysql-password
+        - name: MYSQL_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: car-dealership-config
+              key: MYSQL_DATABASE
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: car-dealership-secrets
+              key: jwt-secret-key
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: car-dealership-config
+              key: REDIS_URL
+        envFrom:
+        - configMapRef:
+            name: car-dealership-config
+        volumeMounts:
+        - name: api-logs
+          mountPath: /app/logs
+        - name: api-uploads
+          mountPath: /app/uploads
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+      volumes:
+      - name: api-logs
+        emptyDir: {}
+      - name: api-uploads
+        emptyDir: {}
+      initContainers:
+      - name: wait-for-mysql
+        image: busybox:1.35
+        command:
+        - sh
+        - -c
+        - |
+          until nc -z mysql-service 3306; do
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+          echo "MySQL is ready!"

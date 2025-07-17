@@ -1,0 +1,61 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: car-dealership
+
+resources:
+- namespace.yaml
+- secrets.yaml  # Supprimez le secret TLS d'ici
+- configmaps.yaml
+- storage/mysql-pvc.yaml
+- storage/redis-pvc.yaml
+- mysql/deployment.yaml
+- mysql/service.yaml
+- redis/deployment.yaml
+- redis/service.yaml
+- api/deployment.yaml
+- api/service.yaml
+- frontend/deployment.yaml
+- frontend/service.yaml
+- phpmyadmin/deployment.yaml
+- phpmyadmin/service.yaml
+- ingress/tls-secret.yaml      # Ajoutez cette ligne
+- ingress/ingress.yaml
+
+commonLabels:
+  project: car-dealership
+  environment: production
+
+
+# apiVersion: kustomize.config.k8s.io/v1beta1
+# kind: Kustomization
+
+# namespace: car-dealership
+
+# resources:
+# - namespace.yaml
+# - secrets.yaml
+# - configmaps.yaml
+# - storage/mysql-pvc.yaml
+# - storage/redis-pvc.yaml
+# - mysql/deployment.yaml
+# - mysql/service.yaml
+# - redis/deployment.yaml
+# - redis/service.yaml
+# - api/deployment.yaml
+# - api/service.yaml
+# - frontend/deployment.yaml
+# - frontend/service.yaml
+# - phpmyadmin/deployment.yaml
+# - phpmyadmin/service.yaml
+# - ingress/ingress.yaml
+
+# commonLabels:
+#   project: car-dealership
+#   environment: production
+
+# images:
+# - name: test_ai-api
+#   newTag: latest
+# - name: test_ai-frontend
+#   newTag: latest

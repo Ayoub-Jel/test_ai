@@ -1,0 +1,199 @@
+# version: '3.8'
+
+services:
+  # Base de données MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: car_dealership_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: car_dealership
+      MYSQL_USER: car_user
+      MYSQL_PASSWORD: car_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/scripts/01-setup.sql:/docker-entrypoint-initdb.d/01-setup.sql
+      - ./backend/scripts/02-sample-data.sql:/docker-entrypoint-initdb.d/02-sample-data.sql
+    ports:
+      - "3310:3306"
+    networks:
+      - car_dealership_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Backend FastAPI
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: car_dealership_api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql+pymysql://car_user:car_password@mysql:3306/car_dealership
+      SECRET_KEY: quantum-motors-secret-key-change-in-production-with-long-random-string
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      APP_NAME: Car Dealership API
+      APP_VERSION: 1.0.0
+      DEBUG: "true"
+      CORS_ORIGINS: '["http://localhost:3000","http://localhost:8080","http://localhost:5173","http://localhost:8501","http://frontend:8501"]'
+      DEFAULT_PAGE_SIZE: 20
+      MAX_PAGE_SIZE: 100
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+      # Email (optionnel)
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USER: your-email@gmail.com
+      SMTP_PASSWORD: your-app-password
+      # Upload
+      MAX_UPLOAD_SIZE: 10485760
+      UPLOAD_DIR: /app/uploads
+      ALLOWED_EXTENSIONS: '["jpg","jpeg","png","pdf"]'
+      # Logging
+      LOG_LEVEL: INFO
+      LOG_FILE: /app/logs/app.log
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/scripts:/app/scripts
+      - api_logs:/app/logs
+      - api_uploads:/app/uploads
+    networks:
+      - car_dealership_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend Streamlit
+  frontend:
+    build:
+      context: ./streamlit_app
+      dockerfile: Dockerfile
+    container_name: car_dealership_frontend
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      # Configuration de l'API backend
+      API_BASE_URL: http://api:8000
+      API_TIMEOUT: 30
+      # Configuration Streamlit
+      STREAMLIT_THEME_BASE: light
+      STREAMLIT_THEME_PRIMARY_COLOR: "#FF6B6B"
+      STREAMLIT_THEME_BACKGROUND_COLOR: "#FFFFFF"
+      STREAMLIT_THEME_SECONDARY_BACKGROUND_COLOR: "#F0F2F6"
+      STREAMLIT_THEME_TEXT_COLOR: "#262730"
+      STREAMLIT_SERVER_MAX_UPLOAD_SIZE: 200
+      # Debug
+      DEBUG: "true"
+    ports:
+      - "8501:8501"
+    volumes:
+      # Montage pour le développement (optionnel)
+      - ./streamlit_app:/app
+      - frontend_assets:/app/assets
+    networks:
+      - car_dealership_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # phpMyAdmin pour la gestion de la base
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: car_dealership_phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: car_user
+      PMA_PASSWORD: car_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "8081:80"
+    networks:
+      - car_dealership_network
+
+  # Redis pour le cache
+  redis:
+    image: redis:7-alpine
+    container_name: car_dealership_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - car_dealership_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Service optionnel pour les tests
+  test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: car_dealership_test
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql+pymysql://car_user:car_password@mysql:3306/car_dealership_test
+      TESTING: "true"
+      SECRET_KEY: test-secret-key
+    volumes:
+      - ./backend/app:/app/app:ro
+      - ./backend/tests:/app/tests:ro
+    command: ["python", "-m", "pytest", "tests/", "-v"]
+    networks:
+      - car_dealership_network
+    profiles:
+      - testing
+
+networks:
+  car_dealership_network:
+    driver: bridge
+    name: car_dealership_network
+
+volumes:
+  mysql_data:
+    name: car_dealership_mysql_data
+    driver: local
+  redis_data:
+    name: car_dealership_redis_data
+    driver: local
+  api_logs:
+    name: car_dealership_api_logs
+    driver: local
+  api_uploads:
+    name: car_dealership_api_uploads
+    driver: local
+  frontend_assets:
+    name: car_dealership_frontend_assets
+    driver: local

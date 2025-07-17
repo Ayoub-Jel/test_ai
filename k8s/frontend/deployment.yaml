@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: car-dealership
+  labels:
+    app: frontend
+    component: ui
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+        component: ui
+    spec:
+      containers:
+      - name: frontend
+        image: test_ai-frontend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8501
+          name: http
+        env:
+        - name: API_BASE_URL
+          value: "http://api-service:8000"
+        - name: API_TIMEOUT
+          value: "30"
+        - name: STREAMLIT_THEME_BASE
+          value: "light"
+        - name: STREAMLIT_THEME_PRIMARY_COLOR
+          value: "#FF6B6B"
+        - name: STREAMLIT_THEME_BACKGROUND_COLOR
+          value: "#FFFFFF"
+        - name: STREAMLIT_THEME_SECONDARY_BACKGROUND_COLOR
+          value: "#F0F2F6"
+        - name: STREAMLIT_THEME_TEXT_COLOR
+          value: "#262730"
+        - name: STREAMLIT_SERVER_MAX_UPLOAD_SIZE
+          value: "200"
+        - name: DEBUG
+          value: "false"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+      initContainers:
+      - name: wait-for-api
+        image: busybox:1.35
+        command:
+        - sh
+        - -c
+        - |
+          until nc -z api-service 8000; do
+            echo "Waiting for API..."
+            sleep 2
+          done
+          echo "API is ready!"

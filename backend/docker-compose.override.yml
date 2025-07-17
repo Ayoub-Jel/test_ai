@@ -1,0 +1,94 @@
+# # docker-compose.override.yml
+# # Configuration pour le développement local
+# # Ce fichier est automatiquement fusionné avec docker-compose.yml
+
+# version: '3.8'
+
+# services:
+#   # Override pour le développement de l'API
+#   api:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile
+#       # target: development  # Si vous avez un multi-stage build
+#     volumes:
+#       # Montage des sources pour le hot reload
+#       - ./app:/app/app:ro
+#       - ./scripts:/app/scripts:ro
+#       - ./run.py:/app/run.py:ro
+#       # Volumes persistants pour les données
+#       - api_logs:/app/logs
+#       - api_uploads:/app/uploads
+#     environment:
+#       # Variables spécifiques au développement
+#       DEBUG: "true"
+#       LOG_LEVEL: "DEBUG"
+#       RELOAD: "true"
+#     command: ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+#     # Ajout de ports pour debugger
+#     ports:
+#       - "8000:8000"
+#       - "5678:5678"  # Port pour le debugger
+
+#   # Override pour MySQL en développement
+#   mysql:
+#     command: --default-authentication-plugin=mysql_native_password --innodb-buffer-pool-size=128M
+#     volumes:
+#       - mysql_data:/var/lib/mysql
+#       - ./scripts/01-setup.sql:/docker-entrypoint-initdb.d/01-setup.sql
+#       - ./scripts/02-sample-data.sql:/docker-entrypoint-initdb.d/02-sample-data.sql
+#       # Montage pour les scripts de développement
+#       - ./scripts:/docker-entrypoint-initdb.d/scripts:ro
+#     environment:
+#       # Configuration MySQL pour le développement
+#       MYSQL_ROOT_PASSWORD: root_password
+#       MYSQL_DATABASE: car_dealership
+#       MYSQL_USER: car_user
+#       MYSQL_PASSWORD: car_password
+#       # Optimisations pour le développement
+#       MYSQL_INNODB_BUFFER_POOL_SIZE: 128M
+#       MYSQL_INNODB_LOG_FILE_SIZE: 64M
+
+#   # Service pour les tests automatisés
+#   test:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile
+#     depends_on:
+#       - mysql
+#       - redis
+#     environment:
+#       DATABASE_URL: mysql+pymysql://car_user:car_password@mysql:3306/car_dealership_test
+#       TESTING: "true"
+#     volumes:
+#       - ./app:/app/app:ro
+#       - ./tests:/app/tests:ro
+#     command: ["python", "-m", "pytest", "tests/", "-v"]
+#     profiles:
+#       - testing
+
+#   # Service pour les migrations de base de données
+#   migration:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile
+#     depends_on:
+#       - mysql
+#     environment:
+#       DATABASE_URL: mysql+pymysql://car_user:car_password@mysql:3306/car_dealership
+#     volumes:
+#       - ./app:/app/app:ro
+#       - ./scripts:/app/scripts:ro
+#     command: ["python", "scripts/init_db.py"]
+#     profiles:
+#       - migration
+
+# volumes:
+#   mysql_data:
+#     driver: local
+#   redis_data:
+#     driver: local
+#   api_logs:
+#     driver: local
+#   api_uploads:
+#     driver: local
